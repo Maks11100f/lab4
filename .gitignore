@@ -1,0 +1,32 @@
+# --- CLion / JetBrains ---
+.idea/
+*.iml
+
+# --- CMake build directories (CLion: cmake-build-debug, cmake-build-release, ...) ---
+cmake-build-*/
+build/
+out/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+
+# --- Compiled files ---
+*.exe
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.so
+*.pdb
+*.ilk
+
+# --- Generated test files with operation sequences ---
+data/
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+desktop.ini
