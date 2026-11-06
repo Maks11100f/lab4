@@ -1,8 +1,14 @@
 #pragma once
 
-enum class OpType { Read, Write, String };
+enum class OpType
+{
+    Read,
+    Write,
+    String
+};
 
-struct Operation {
+struct Operation
+{
     OpType type;
     int field;
     int value;

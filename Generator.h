@@ -5,17 +5,19 @@
 
 #include "Operation.h"
 
-struct OpShare {
+struct OpShare
+{
     OpType type;
     int field;
     int percent;
 };
 
-struct Scenario {
+struct Scenario
+{
     std::string name;
     std::vector<OpShare> shares;
 };
 
 std::vector<Scenario> defaultScenarios();
 
-void generateFile(const std::string& path, const Scenario& scenario, int opCount, unsigned seed);
+void generateFile(const std::string &path, const Scenario &scenario, int opCount, unsigned seed);
