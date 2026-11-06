@@ -1,87 +1,82 @@
 #include "Runner.h"
+#include "timing.h"
 
-#include <chrono>
+#include <format>
 #include <fstream>
-#include <mutex>
+#include <latch>
 #include <stdexcept>
 #include <thread>
 
-std::vector<Operation> loadOperations(const std::string& path) {
-    std::ifstream in(path);
-    if (!in) {
-        throw std::runtime_error("cannot open " + path);
-    }
+using namespace std;
 
-    std::vector<Operation> ops;
-    std::string cmd;
-    while (in >> cmd) {
+vector<Operation> loadOperations(const string &path)
+{
+    ifstream in(path);
+    if (!in)
+        throw runtime_error(format("cannot open {}", path));
+
+    vector<Operation> ops;
+    string cmd;
+    while (in >> cmd)
+    {
         Operation op{OpType::String, 0, 0};
-        if (cmd == "read") {
+        if (cmd == "read")
+        {
             op.type = OpType::Read;
             in >> op.field;
-        } else if (cmd == "write") {
+        }
+        else if (cmd == "write")
+        {
             op.type = OpType::Write;
             in >> op.field >> op.value;
-        } else if (cmd != "string") {
-            throw std::runtime_error("unknown command '" + cmd + "' in " + path);
         }
-        if (!in || op.field < 0 || op.field >= DataStruct::M) {
-            throw std::runtime_error("bad line in " + path + " after command '" + cmd + "'");
-        }
+        else if (cmd != "string")
+            throw runtime_error(format("unknown command '{}' in {}", cmd, path));
+
+        if (!in || op.field < 0 || op.field >= DataStruct::M)
+            throw runtime_error(format("bad line '{}' in {}", cmd, path));
         ops.push_back(op);
     }
     return ops;
 }
 
-static std::size_t execute(DataStruct& ds, const std::vector<Operation>& ops) {
-    std::size_t sink = 0;
-    for (const Operation& op : ops) {
-        switch (op.type) {
-            case OpType::Read:
-                sink += ds.get(op.field);
-                break;
-            case OpType::Write:
-                ds.set(op.field, op.value);
-                break;
-            case OpType::String:
-                sink += std::string(ds).size();
-                break;
+static size_t execute(DataStruct &ds, const vector<Operation> &ops)
+{
+    size_t checksum = 0;
+    for (const auto &op : ops)
+    {
+        switch (op.type)
+        {
+        case OpType::Read:
+            checksum += ds.get(op.field);
+            break;
+        case OpType::Write:
+            ds.set(op.field, op.value);
+            break;
+        case OpType::String:
+            checksum += string(ds).size();
+            break;
         }
     }
-    return sink;
+    return checksum;
 }
 
-double runInThreads(DataStruct& ds, const std::vector<const std::vector<Operation>*>& perThread) {
-    const std::size_t threadCount = perThread.size();
+double runInThreads(DataStruct &ds, const vector<vector<Operation>> &files, int threadCount)
+{
+    latch start(1);
+    vector<size_t> checksums(threadCount);
+    vector<jthread> threads;
+    for (int t = 0; t < threadCount; ++t)
+        threads.emplace_back([&, t]
+                             {
+                                 start.wait();
+                                 checksums[t] = execute(ds, files[t]);
+                             });
 
-    std::mutex startGate;
-    std::unique_lock<std::mutex> holdGate(startGate);
-
-    std::vector<std::size_t> sinks(threadCount, 0);
-    std::vector<std::thread> threads;
-    threads.reserve(threadCount);
-
-    for (std::size_t t = 0; t < threadCount; ++t) {
-        threads.emplace_back([&, t] {
-            {
-                std::lock_guard<std::mutex> pass(startGate);
-            }
-            sinks[t] = execute(ds, *perThread[t]);
-        });
-    }
-
-    const auto start = std::chrono::steady_clock::now();
-    holdGate.unlock();
-
-    for (std::thread& th : threads) {
-        th.join();
-    }
-    const auto finish = std::chrono::steady_clock::now();
-
-    volatile std::size_t keep = 0;
-    for (std::size_t s : sinks) {
-        keep = keep + s;
-    }
-
-    return std::chrono::duration<double, std::milli>(finish - start).count();
+    return timeit([&]
+                  {
+                      start.count_down();
+                      for (auto &th : threads)
+                          th.join();
+                  });
 }

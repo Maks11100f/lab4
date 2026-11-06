@@ -6,6 +6,6 @@
 #include "DataStruct.h"
 #include "Operation.h"
 
-std::vector<Operation> loadOperations(const std::string& path);
+std::vector<Operation> loadOperations(const std::string &path);
 
-double runInThreads(DataStruct& ds, const std::vector<const std::vector<Operation>*>& perThread);
+double runInThreads(DataStruct &ds, const std::vector<std::vector<Operation>> &files, int threadCount);
