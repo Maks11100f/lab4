@@ -22,8 +22,11 @@ public:
         std::shared_lock<std::shared_mutex> lock0(fields_[0].mtx, std::defer_lock);
         std::shared_lock<std::shared_mutex> lock1(fields_[1].mtx, std::defer_lock);
         std::lock(lock0, lock1);
-        return "[" + std::to_string(fields_[0].value) + ", "
-                   + std::to_string(fields_[1].value) + "]";
+        const int value0 = fields_[0].value;
+        const int value1 = fields_[1].value;
+        lock0.unlock();
+        lock1.unlock();
+        return "[" + std::to_string(value0) + ", " + std::to_string(value1) + "]";
     }
 
 private:
