@@ -45,18 +45,12 @@ static size_t execute(DataStruct &ds, const vector<Operation> &ops)
     size_t checksum = 0;
     for (const auto &op : ops)
     {
-        switch (op.type)
-        {
-        case OpType::Read:
+        if (op.type == OpType::Read)
             checksum += ds.get(op.field);
-            break;
-        case OpType::Write:
+        else if (op.type == OpType::Write)
             ds.set(op.field, op.value);
-            break;
-        case OpType::String:
+        else
             checksum += string(ds).size();
-            break;
-        }
     }
     return checksum;
 }

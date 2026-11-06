@@ -57,17 +57,11 @@ void generateFile(const string &path, const Scenario &scenario, int opCount, uns
         throw runtime_error(format("cannot open {} for writing", path));
     for (const auto &op : ops)
     {
-        switch (op.type)
-        {
-        case OpType::Read:
+        if (op.type == OpType::Read)
             out << format("read {}\n", op.field);
-            break;
-        case OpType::Write:
+        else if (op.type == OpType::Write)
             out << format("write {} {}\n", op.field, op.value);
-            break;
-        case OpType::String:
+        else
             out << "string\n";
-            break;
-        }
     }
 }
