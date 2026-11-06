@@ -3,6 +3,17 @@
 *.iml
 CMakeLists.txt
 
+# --- Visual Studio ---
+.vs/
+x64/
+lab4/
+lab4_/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+CppProperties.json
+
 # --- CMake build directories (CLion: cmake-build-debug, cmake-build-release, ...) ---
 cmake-build-*/
 build/
