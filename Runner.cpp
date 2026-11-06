@@ -1,7 +1,6 @@
 #include "Runner.h"
 
 #include <chrono>
-#include <condition_variable>
 #include <fstream>
 #include <mutex>
 #include <stdexcept>
@@ -55,10 +54,8 @@ static std::size_t execute(DataStruct& ds, const std::vector<Operation>& ops) {
 double runInThreads(DataStruct& ds, const std::vector<const std::vector<Operation>*>& perThread) {
     const std::size_t threadCount = perThread.size();
 
-    std::mutex gateMutex;
-    std::condition_variable gateCv;
-    std::size_t ready = 0;
-    bool go = false;
+    std::mutex startGate;
+    std::unique_lock<std::mutex> holdGate(startGate);
 
     std::vector<std::size_t> sinks(threadCount, 0);
     std::vector<std::thread> threads;
@@ -67,26 +64,14 @@ double runInThreads(DataStruct& ds, const std::vector<const std::vector<Operatio
     for (std::size_t t = 0; t < threadCount; ++t) {
         threads.emplace_back([&, t] {
             {
-                std::unique_lock<std::mutex> lock(gateMutex);
-                ++ready;
-                gateCv.notify_all();
-                gateCv.wait(lock, [&] { return go; });
+                std::lock_guard<std::mutex> pass(startGate);
             }
             sinks[t] = execute(ds, *perThread[t]);
         });
     }
 
-    {
-        std::unique_lock<std::mutex> lock(gateMutex);
-        gateCv.wait(lock, [&] { return ready == threadCount; });
-    }
-
     const auto start = std::chrono::steady_clock::now();
-    {
-        std::lock_guard<std::mutex> lock(gateMutex);
-        go = true;
-    }
-    gateCv.notify_all();
+    holdGate.unlock();
 
     for (std::thread& th : threads) {
         th.join();
