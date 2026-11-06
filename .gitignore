@@ -1,6 +1,7 @@
 # --- CLion / JetBrains ---
 .idea/
 *.iml
+CMakeLists.txt
 
 # --- CMake build directories (CLion: cmake-build-debug, cmake-build-release, ...) ---
 cmake-build-*/
